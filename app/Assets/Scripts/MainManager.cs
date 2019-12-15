@@ -4,17 +4,28 @@ using UnityEngine;
 using UnityEngine.UI;
 using AppJson;
 using UnityEngine.Networking;
+using UnityEngine.Video;
 
 public class MainManager : MonoBehaviour
 {
     public Transform Model;
     public GameObject canvas;
 
+    public Animator anim;
+    public AudioSource Sound;
+    public VideoPlayer VideoPlayer;
+
+    public Renderer[] Markers;
+
     public Renderer VideoMarker;
     public RawImage Viewer;
+    public Image ViewerSprite;
 
     public GameObject Downloader;
     public GameObject View;
+    public GameObject VideoView;
+
+    public GameObject FindMessage;
 
     public Slider Rotator;
     public Slider ProgressBar;
@@ -23,69 +34,139 @@ public class MainManager : MonoBehaviour
     public string ID = "dr9zr08t3olv";
     public string JsonUrl;
 
-    public string ImageTemplateUrl = "http://spins0.arqspin.com/";
+    public string ImageTemplateUrl = "https://spins0.arqspin.com/";
     public SpinInfo Info;
 
-    public Texture[] Textures;
+    public List<Texture> Textures = new List<Texture>();
+    public List<Sprite> Sprites = new List<Sprite>();
     public int Code = 0;
 
     public float progress = 0;
-    public bool Debug = true;
+    public bool DebugMode = true;
+    Renderer activeImage = null;
 
-    public void CreateJsonUrl()
+    public Text MineralName;
+
+    public string CreateJsonUrl(string id)
     {
-        JsonUrl = "http://spins0.arqspin.com/" + ID + "/spin.json";
+        return "http://spins0.arqspin.com/" + id + "/spin.json";
     }
 
     public void Start()
     {
-        CreateJsonUrl();
+
+    }
+
+    public void ShowFindMessage()
+    {
+        if (activeImage || VideoMarker.enabled)
+            FindMessage.SetActive(false);
+        else
+            FindMessage.SetActive(true);
+    }
+
+    public void GetMineral()
+    {
+        //ImageFound = true;
+        //DownloadImages(activeImage.GetComponentInParent<Mineral>());
+        View.SetActive(true);
+        Downloader.SetActive(true);
+        Sound.clip = activeImage.GetComponentInParent<Mineral>().sound;
+        Sound.Play();
     }
 
     public void Update()
     {
-        if(VideoMarker.enabled)
+        activeImage = GetFoundImage();
+
+        ShowFindMessage();
+
+        if(!activeImage)
         {
-            ImageFound = true;
-            DownloadImages();
+            Code = 0;
         }
 
-        if(ImageFound)
+        if (activeImage && activeImage.enabled)
+        {
+            ImageFound = true;
+            if(Code < 3)
+                DownloadImages(activeImage.GetComponentInParent<Mineral>());
+            MineralName.text = activeImage.GetComponentInParent<Mineral>().Name;
+            anim.SetInteger("Watch", 1);
+        }
+        else if(VideoMarker.enabled)
+        {
+            anim.SetInteger("Watch", 2);
+        }
+        else
+        {
+            anim.SetInteger("Watch", 0);
+        }
+
+        if (ImageFound)
         {
             canvas.SetActive(true);
+            if(progress > 0.9f)
+                Downloader.SetActive(false);
+            else
+                Downloader.SetActive(true);
+
             switch (Code)
             {
                 default:
                 case 0: //Default
-                    Downloader.SetActive(false);
-                    View.SetActive(false);
                     break;
                 case 1: //Start Connection Process
-                    Downloader.SetActive(false);
-                    View.SetActive(false);
                     break;
                 case 2: //Error
-                    Downloader.SetActive(false);
-                    View.SetActive(false);
                     break;
                 case 3: //Start Dowload Process
-                    Downloader.SetActive(true);
                     ProgressBar.value = progress;
-                    View.SetActive(false);
                     break;
                 case 4: //Success
-                    Downloader.SetActive(false);
-                    ProcessImages();
-                    View.SetActive(true);
                     break;
             }
         }
         else
         {
-            canvas.SetActive(false);
+            //canvas.SetActive(false);
+        }
+        if(Textures.Count > 0)
+        {
+            ProcessImages();
         }
 
-        
+
+
+    }
+
+    public Renderer GetFoundImage()
+    {
+        foreach(Renderer r in Markers)
+        {
+            if (r.enabled)
+                return r;
+        }
+        return null;
+    }
+
+    public void OpenVideo()
+    {
+        VideoPlayer.Play();
+        VideoView.SetActive(true);
+    }
+
+    public void CloseViewer()
+    {
+        View.SetActive(false);
+        Sound.Pause();
+        Sound.clip = null;
+    }
+
+    public void CloseVideo()
+    {
+        VideoPlayer.Stop();
+        VideoView.SetActive(false);
     }
 
     public void OpenClose()
@@ -98,44 +179,50 @@ public class MainManager : MonoBehaviour
     public void Reset()
     {
         StopAllCoroutines();
-        Textures = null;
-        Code = 0;
+        Textures.Clear();
+        //Sprites.Clear();
+        //Code = 0;
         Viewer.texture = null;
     }
 
     public void ProcessImages()
     {
-        if(Textures[(int)Rotator.value] != null)
+        if(Textures[(int)Rotator.value])
         {
             Viewer.texture = Textures[(int)Rotator.value];
         }
     }
 
-    public void DownloadImages()
+    public void DownloadImages(Mineral mineral)
     {
-        if(Code == 0)
+        Textures.Clear();
+        ProgressBar.value = 1;
+        if (Code == 0)
         {
-            StartCoroutine(Images());
+            StartCoroutine(Images(mineral));
         }
     }
 
-    public IEnumerator Images()
+    public IEnumerator Images(Mineral mineral)
     {
         Code = 1;
+        JsonUrl = CreateJsonUrl(mineral.ID);
         using(UnityWebRequest webRequest = UnityWebRequest.Get(JsonUrl))
         {
             yield return webRequest.SendWebRequest();
             Info = JsonUtility.FromJson<SpinInfo>(webRequest.downloadHandler.text);
         }
 
+        int scale = 2;
         int ImageCount = Info.spin.frame_count;
-        Textures = new Texture[ImageCount];
 
-        for(int i = 1; i <= ImageCount; i++)
+        for(int i = 1; i <= ImageCount; i+=scale)
         {
             progress = i / (float)ImageCount;
             string number = formatNumber(i);
-            string imageUrl = ImageTemplateUrl + ID.ToString() + "/380.380/" + number + ".jpg";
+            string imageUrl = ImageTemplateUrl + mineral.ID + "/" + mineral.GetPartOfUrl() + "/" + number + ".jpg";
+            if(DebugMode)
+                Debug.Log(imageUrl);
             using (UnityWebRequest webRequest = UnityWebRequestTexture.GetTexture(imageUrl))
             {
                 yield return webRequest.SendWebRequest();
@@ -145,12 +232,13 @@ public class MainManager : MonoBehaviour
                 }
                 else
                 {
-                    Textures[i - 1] = DownloadHandlerTexture.GetContent(webRequest);
+                    var tex = DownloadHandlerTexture.GetContent(webRequest);
+                    Textures.Add(tex);
                     Code = 3;
                 }
             }
         }
-        Rotator.maxValue = Textures.Length - 1;
+        Rotator.maxValue = Textures.Count - 1;
         Code = 4;
     }
 
