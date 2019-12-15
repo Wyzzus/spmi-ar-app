@@ -71,10 +71,20 @@ public class MainManager : MonoBehaviour
         //DownloadImages(activeImage.GetComponentInParent<Mineral>());
         View.SetActive(true);
         Downloader.SetActive(true);
+        StartCoroutine(StartSound());
+    }
+
+    public IEnumerator StartSound()
+    {
+        while(progress < 0.9f || !activeImage)
+        {
+            yield return new WaitForEndOfFrame();
+            Debug.Log(progress);
+        }
         Sound.clip = activeImage.GetComponentInParent<Mineral>().sound;
         Sound.Play();
     }
-
+    
     public void Update()
     {
         activeImage = GetFoundImage();
@@ -89,7 +99,7 @@ public class MainManager : MonoBehaviour
         if (activeImage && activeImage.enabled)
         {
             ImageFound = true;
-            if(Code < 3)
+            if(Code < 3 && !View.activeSelf)
                 DownloadImages(activeImage.GetComponentInParent<Mineral>());
             MineralName.text = activeImage.GetComponentInParent<Mineral>().Name;
             anim.SetInteger("Watch", 1);
@@ -161,6 +171,7 @@ public class MainManager : MonoBehaviour
         View.SetActive(false);
         Sound.Pause();
         Sound.clip = null;
+        StopAllCoroutines();
     }
 
     public void CloseVideo()
@@ -180,8 +191,6 @@ public class MainManager : MonoBehaviour
     {
         StopAllCoroutines();
         Textures.Clear();
-        //Sprites.Clear();
-        //Code = 0;
         Viewer.texture = null;
     }
 

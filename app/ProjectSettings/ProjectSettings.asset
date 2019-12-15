@@ -156,8 +156,8 @@ PlayerSettings:
     Android: com.wyzzus.gorniy_app
   buildNumber: {}
   AndroidBundleVersionCode: 1
-  AndroidMinSdkVersion: 27
-  AndroidTargetSdkVersion: 27
+  AndroidMinSdkVersion: 21
+  AndroidTargetSdkVersion: 21
   AndroidPreferredInstallLocation: 1
   aotOptions: 
   stripEngineCode: 1
