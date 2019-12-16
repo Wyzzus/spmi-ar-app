@@ -45,6 +45,9 @@ public class MainManager : MonoBehaviour
     public bool DebugMode = true;
     Renderer activeImage = null;
 
+    public bool Zoom;
+    public Text ZoomText;
+
     public Text MineralName;
 
     public string CreateJsonUrl(string id)
@@ -145,8 +148,6 @@ public class MainManager : MonoBehaviour
         {
             ProcessImages();
         }
-
-
 
     }
 
@@ -264,6 +265,25 @@ public class MainManager : MonoBehaviour
         else
         {
             return n.ToString();
+        }
+    }
+
+    public void Zooming()
+    {
+        Zoom = !Zoom;
+        if (Zoom)
+        {
+            float w = 700;
+            Viewer.rectTransform.sizeDelta = new Vector2(w, w);
+            Viewer.rectTransform.anchoredPosition = new Vector2(-w / 2, w / 2);
+            ZoomText.text = "Отдалить";
+        }
+        else
+        {
+            float w = 350;
+            Viewer.rectTransform.sizeDelta = new Vector2(w, w);
+            Viewer.rectTransform.anchoredPosition = new Vector2(-w / 2, w / 2);
+            ZoomText.text = "Приблизить";
         }
     }
 }
