@@ -21,6 +21,8 @@ public class MainManager : MonoBehaviour
     public RawImage Viewer;
     public Image ViewerSprite;
 
+    public ScrollRect Zoomer;
+
     public GameObject Downloader;
     public GameObject View;
     public GameObject VideoView;
@@ -249,6 +251,8 @@ public class MainManager : MonoBehaviour
             }
         }
         Rotator.maxValue = Textures.Count - 1;
+        Zoom = true;
+        Zooming();
         Code = 4;
     }
 
@@ -277,6 +281,7 @@ public class MainManager : MonoBehaviour
             Viewer.rectTransform.sizeDelta = new Vector2(w, w);
             Viewer.rectTransform.anchoredPosition = new Vector2(-w / 2, w / 2);
             ZoomText.text = "Отдалить";
+            Zoomer.enabled = true;
         }
         else
         {
@@ -284,6 +289,7 @@ public class MainManager : MonoBehaviour
             Viewer.rectTransform.sizeDelta = new Vector2(w, w);
             Viewer.rectTransform.anchoredPosition = new Vector2(-w / 2, w / 2);
             ZoomText.text = "Приблизить";
+            Zoomer.enabled = false;
         }
     }
 }
