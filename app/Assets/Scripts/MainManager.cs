@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using AppJson;
 using UnityEngine.Networking;
 using UnityEngine.Video;
+using Vuforia;
 
 public class MainManager : MonoBehaviour
 {
@@ -19,7 +20,7 @@ public class MainManager : MonoBehaviour
 
     public Renderer VideoMarker;
     public RawImage Viewer;
-    public Image ViewerSprite;
+    public UnityEngine.UI.Image ViewerSprite;
 
     public ScrollRect Zoomer;
 
@@ -45,10 +46,14 @@ public class MainManager : MonoBehaviour
 
     public float progress = 0;
     public bool DebugMode = true;
-    Renderer activeImage = null;
+    public Renderer activeImage = null;
+
+    public Renderer currentImage;
 
     public bool Zoom;
     public Text ZoomText;
+
+    public GameObject Confirmation;
 
     public Text MineralName;
 
@@ -73,10 +78,14 @@ public class MainManager : MonoBehaviour
     public void GetMineral()
     {
         //ImageFound = true;
-        //DownloadImages(activeImage.GetComponentInParent<Mineral>());
+        if (Textures.Count == 0)
+        {
+            DownloadImages(activeImage.GetComponentInParent<Mineral>());
+
+        }
         View.SetActive(true);
-        Downloader.SetActive(true);
         StartCoroutine(StartSound());
+        Downloader.SetActive(true);
     }
 
     public IEnumerator StartSound()
@@ -89,7 +98,8 @@ public class MainManager : MonoBehaviour
         Sound.clip = activeImage.GetComponentInParent<Mineral>().sound;
         Sound.Play();
     }
-    
+
+
     public void Update()
     {
         activeImage = GetFoundImage();
@@ -106,6 +116,12 @@ public class MainManager : MonoBehaviour
             ImageFound = true;
             if(Code < 3 && !View.activeSelf)
                 DownloadImages(activeImage.GetComponentInParent<Mineral>());
+
+            if(activeImage != currentImage)
+            {
+                Code = 0;
+            }
+            
             MineralName.text = activeImage.GetComponentInParent<Mineral>().Name;
             anim.SetInteger("Watch", 1);
         }
@@ -116,6 +132,9 @@ public class MainManager : MonoBehaviour
         else
         {
             anim.SetInteger("Watch", 0);
+            StopAllCoroutines();
+            //if(!View.activeSelf)
+            //    Textures.Clear();
         }
 
         if (ImageFound)
@@ -175,6 +194,9 @@ public class MainManager : MonoBehaviour
         Sound.Pause();
         Sound.clip = null;
         StopAllCoroutines();
+        //Textures.Clear();
+        //if (activeImage && activeImage.enabled)
+        //    DownloadImages(activeImage.GetComponentInParent<Mineral>());
     }
 
     public void CloseVideo()
@@ -193,13 +215,13 @@ public class MainManager : MonoBehaviour
     public void Reset()
     {
         StopAllCoroutines();
-        Textures.Clear();
+        //Textures.Clear();
         Viewer.texture = null;
     }
 
     public void ProcessImages()
     {
-        if(Textures[(int)Rotator.value])
+        if((int)Rotator.value < Textures.Count && Textures[(int)Rotator.value] != null)
         {
             Viewer.texture = Textures[(int)Rotator.value];
         }
@@ -215,8 +237,26 @@ public class MainManager : MonoBehaviour
         }
     }
 
+    public void ConfirmExit()
+    {
+        Confirmation.SetActive(true);
+    }
+
+    public void NoExit()
+    {
+        Confirmation.SetActive(false);
+    }
+
+    public void YesExit()
+    {
+        Application.Quit();
+    }
+
     public IEnumerator Images(Mineral mineral)
     {
+        currentImage = activeImage;
+        Zoom = true;
+        Zooming();
         Code = 1;
         JsonUrl = CreateJsonUrl(mineral.ID);
         using(UnityWebRequest webRequest = UnityWebRequest.Get(JsonUrl))
@@ -251,8 +291,6 @@ public class MainManager : MonoBehaviour
             }
         }
         Rotator.maxValue = Textures.Count - 1;
-        Zoom = true;
-        Zooming();
         Code = 4;
     }
 
