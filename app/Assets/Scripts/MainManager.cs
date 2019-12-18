@@ -24,6 +24,8 @@ public class MainManager : MonoBehaviour
 
     public ScrollRect Zoomer;
 
+    public RectTransform viewPortScreen;
+
     public GameObject Downloader;
     public GameObject View;
     public GameObject VideoView;
@@ -77,6 +79,8 @@ public class MainManager : MonoBehaviour
 
     public void GetMineral()
     {
+        Zoom = true;
+        Zooming();
         //ImageFound = true;
         if (Textures.Count == 0)
         {
@@ -90,12 +94,12 @@ public class MainManager : MonoBehaviour
 
     public IEnumerator StartSound()
     {
-        while(progress < 0.9f || !activeImage)
+        while(progress < 0.9f)
         {
             yield return new WaitForEndOfFrame();
             Debug.Log(progress);
         }
-        Sound.clip = activeImage.GetComponentInParent<Mineral>().sound;
+        Sound.clip = currentImage.GetComponentInParent<Mineral>().sound;
         Sound.Play();
     }
 
@@ -132,7 +136,8 @@ public class MainManager : MonoBehaviour
         else
         {
             anim.SetInteger("Watch", 0);
-            StopAllCoroutines();
+            if(Code == 4)
+                StopAllCoroutines();
             //if(!View.activeSelf)
             //    Textures.Clear();
         }
@@ -168,6 +173,23 @@ public class MainManager : MonoBehaviour
         if(Textures.Count > 0)
         {
             ProcessImages();
+        }
+
+        if (Zoom)
+        {
+            float w = (Screen.height > Screen.width) ? viewPortScreen.rect.width * 2 : viewPortScreen.rect.height;
+            Viewer.rectTransform.sizeDelta = new Vector2(w, w);
+            //Viewer.rectTransform.anchoredPosition = new Vector2(0, 0);
+            ZoomText.text = "Отдалить";
+            Zoomer.enabled = true;
+        }
+        else
+        {
+            float w = (Screen.height > Screen.width) ? viewPortScreen.rect.width : viewPortScreen.rect.height / 2;
+            Viewer.rectTransform.sizeDelta = new Vector2(w, w);
+            //Viewer.rectTransform.anchoredPosition = new Vector2(0, 0);
+            ZoomText.text = "Приблизить";
+            Zoomer.enabled = false;
         }
 
     }
@@ -255,8 +277,6 @@ public class MainManager : MonoBehaviour
     public IEnumerator Images(Mineral mineral)
     {
         currentImage = activeImage;
-        Zoom = true;
-        Zooming();
         Code = 1;
         JsonUrl = CreateJsonUrl(mineral.ID);
         using(UnityWebRequest webRequest = UnityWebRequest.Get(JsonUrl))
@@ -313,21 +333,16 @@ public class MainManager : MonoBehaviour
     public void Zooming()
     {
         Zoom = !Zoom;
+
         if (Zoom)
         {
-            float w = 700;
-            Viewer.rectTransform.sizeDelta = new Vector2(w, w);
-            Viewer.rectTransform.anchoredPosition = new Vector2(-w / 2, w / 2);
-            ZoomText.text = "Отдалить";
-            Zoomer.enabled = true;
+            Viewer.rectTransform.anchoredPosition = new Vector2(0, 0);
         }
         else
         {
-            float w = 350;
-            Viewer.rectTransform.sizeDelta = new Vector2(w, w);
-            Viewer.rectTransform.anchoredPosition = new Vector2(-w / 2, w / 2);
-            ZoomText.text = "Приблизить";
-            Zoomer.enabled = false;
+            Viewer.rectTransform.anchoredPosition = new Vector2(0, 0);
         }
+
+        Debug.Log(Screen.height + " | " + Screen.width);
     }
 }
