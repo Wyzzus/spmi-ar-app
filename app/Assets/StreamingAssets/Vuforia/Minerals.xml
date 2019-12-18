@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <QCARConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="qcar_config.xsd">
   <Tracking>
+    <ImageTarget name="Calcite" size="0.300000 0.225000" />
     <ImageTarget name="Barit" size="0.300000 0.300000" />
     <ImageTarget name="MrPresident" size="0.300000 0.229286" />
-    <ImageTarget name="Calcite" size="0.300000 0.300000" />
     <ImageTarget name="Fluorite" size="0.300000 0.300000" />
     <ImageTarget name="Ametist" size="0.300000 0.300000" />
     <ImageTarget name="Azurit" size="0.300000 0.300000" />
